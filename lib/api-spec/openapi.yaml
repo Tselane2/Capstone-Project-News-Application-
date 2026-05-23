@@ -1,0 +1,965 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: News Portal API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: publishers
+    description: Publisher management
+  - name: articles
+    description: Article operations
+  - name: newsletters
+    description: Newsletter operations
+  - name: subscriptions
+    description: Subscription management
+  - name: stats
+    description: Dashboard statistics
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message: { type: string }
+
+  # Current user
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Not authenticated
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (journalists and editors)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [reader, journalist, editor]
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Not found
+
+  # Publishers
+  /publishers:
+    get:
+      operationId: listPublishers
+      tags: [publishers]
+      summary: List all publishers
+      responses:
+        "200":
+          description: List of publishers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Publisher"
+    post:
+      operationId: createPublisher
+      tags: [publishers]
+      summary: Create a publisher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublisherInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publisher"
+
+  /publishers/{publisherId}:
+    get:
+      operationId: getPublisher
+      tags: [publishers]
+      summary: Get publisher by ID
+      parameters:
+        - name: publisherId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Publisher
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publisher"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePublisher
+      tags: [publishers]
+      summary: Update publisher
+      parameters:
+        - name: publisherId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublisherUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publisher"
+
+  # Articles
+  /articles:
+    get:
+      operationId: listArticles
+      tags: [articles]
+      summary: List approved articles
+      parameters:
+        - name: publisherId
+          in: query
+          schema:
+            type: integer
+        - name: authorId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of approved articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleList"
+    post:
+      operationId: createArticle
+      tags: [articles]
+      summary: Create an article (journalists only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "403":
+          description: Forbidden
+
+  /articles/subscribed:
+    get:
+      operationId: listSubscribedArticles
+      tags: [articles]
+      summary: List articles from reader subscriptions
+      responses:
+        "200":
+          description: Subscribed articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Article"
+        "401":
+          description: Not authenticated
+
+  /articles/pending:
+    get:
+      operationId: listPendingArticles
+      tags: [articles]
+      summary: List pending articles awaiting approval (editors only)
+      responses:
+        "200":
+          description: Pending articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Article"
+        "403":
+          description: Forbidden
+
+  /articles/{articleId}:
+    get:
+      operationId: getArticle
+      tags: [articles]
+      summary: Get article by ID
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateArticle
+      tags: [articles]
+      summary: Update article (author or editor)
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+    delete:
+      operationId: deleteArticle
+      tags: [articles]
+      summary: Delete article (author or editor)
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /articles/{articleId}/approve:
+    patch:
+      operationId: approveArticle
+      tags: [articles]
+      summary: Approve or reject an article (editors only)
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleApproval"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+        "403":
+          description: Forbidden
+
+  # Newsletters
+  /newsletters:
+    get:
+      operationId: listNewsletters
+      tags: [newsletters]
+      summary: List all newsletters
+      parameters:
+        - name: authorId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of newsletters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Newsletter"
+    post:
+      operationId: createNewsletter
+      tags: [newsletters]
+      summary: Create a newsletter (journalists only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsletterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Newsletter"
+
+  /newsletters/{newsletterId}:
+    get:
+      operationId: getNewsletter
+      tags: [newsletters]
+      summary: Get newsletter by ID
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Newsletter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Newsletter"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateNewsletter
+      tags: [newsletters]
+      summary: Update newsletter
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsletterUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Newsletter"
+    delete:
+      operationId: deleteNewsletter
+      tags: [newsletters]
+      summary: Delete newsletter
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # Subscriptions
+  /subscriptions/publishers/{publisherId}:
+    post:
+      operationId: subscribePublisher
+      tags: [subscriptions]
+      summary: Subscribe to a publisher (readers only)
+      parameters:
+        - name: publisherId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+    delete:
+      operationId: unsubscribePublisher
+      tags: [subscriptions]
+      summary: Unsubscribe from a publisher
+      parameters:
+        - name: publisherId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unsubscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+
+  /subscriptions/journalists/{journalistId}:
+    post:
+      operationId: subscribeJournalist
+      tags: [subscriptions]
+      summary: Subscribe to a journalist (readers only)
+      parameters:
+        - name: journalistId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+    delete:
+      operationId: unsubscribeJournalist
+      tags: [subscriptions]
+      summary: Unsubscribe from a journalist
+      parameters:
+        - name: journalistId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unsubscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatus"
+
+  /subscriptions/me:
+    get:
+      operationId: getMySubscriptions
+      tags: [subscriptions]
+      summary: Get current reader's subscriptions
+      responses:
+        "200":
+          description: Subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MySubscriptions"
+
+  # Stats
+  /stats:
+    get:
+      operationId: getStats
+      tags: [stats]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [stats]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    # Auth schemas
+    RegisterInput:
+      type: object
+      required: [username, email, password, role]
+      properties:
+        username:
+          type: string
+          minLength: 3
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [reader, journalist, editor]
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        token:
+          type: string
+
+    # User schemas
+    User:
+      type: object
+      required: [id, username, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [reader, journalist, editor]
+        bio:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required: [id, username, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [reader, journalist, editor]
+        bio:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        articleCount:
+          type: integer
+        newsletterCount:
+          type: integer
+
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+        bio:
+          type: string
+
+    # Publisher schemas
+    Publisher:
+      type: object
+      required: [id, name, description, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        articleCount:
+          type: integer
+        editorIds:
+          type: array
+          items:
+            type: integer
+        journalistIds:
+          type: array
+          items:
+            type: integer
+
+    PublisherInput:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+
+    PublisherUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+
+    # Article schemas
+    Article:
+      type: object
+      required: [id, title, content, authorId, authorName, approved, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        publisherId:
+          type: ["integer", "null"]
+        publisherName:
+          type: ["string", "null"]
+        approved:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ArticleList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Article"
+        total:
+          type: integer
+
+    ArticleInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+        publisherId:
+          type: integer
+
+    ArticleUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+        publisherId:
+          type: ["integer", "null"]
+
+    ArticleApproval:
+      type: object
+      required: [approved]
+      properties:
+        approved:
+          type: boolean
+
+    # Newsletter schemas
+    Newsletter:
+      type: object
+      required: [id, title, description, authorId, authorName, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        articleIds:
+          type: array
+          items:
+            type: integer
+        articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Article"
+
+    NewsletterInput:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        articleIds:
+          type: array
+          items:
+            type: integer
+
+    NewsletterUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        articleIds:
+          type: array
+          items:
+            type: integer
+
+    # Subscription schemas
+    SubscriptionStatus:
+      type: object
+      required: [subscribed]
+      properties:
+        subscribed:
+          type: boolean
+        message:
+          type: string
+
+    MySubscriptions:
+      type: object
+      required: [publishers, journalists]
+      properties:
+        publishers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Publisher"
+        journalists:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+
+    # Stats schemas
+    DashboardStats:
+      type: object
+      required: [totalArticles, approvedArticles, pendingArticles, totalNewsletters, totalPublishers, totalJournalists, totalReaders]
+      properties:
+        totalArticles:
+          type: integer
+        approvedArticles:
+          type: integer
+        pendingArticles:
+          type: integer
+        totalNewsletters:
+          type: integer
+        totalPublishers:
+          type: integer
+        totalJournalists:
+          type: integer
+        totalReaders:
+          type: integer
+        recentApprovals:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, type, title, actorName, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [article_published, article_created, newsletter_created, article_approved]
+        title:
+          type: string
+        actorName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        articleId:
+          type: ["integer", "null"]
+        newsletterId:
+          type: ["integer", "null"]
