@@ -1,0 +1,1 @@
+{"version":3,"file":"registerInput.d.ts","sourceRoot":"","sources":["../../../src/generated/types/registerInput.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,qBAAqB,CAAC;AAE7D,MAAM,WAAW,aAAa;IAC5B,mBAAmB;IACnB,QAAQ,EAAE,MAAM,CAAC;IACjB,KAAK,EAAE,MAAM,CAAC;IACd,mBAAmB;IACnB,QAAQ,EAAE,MAAM,CAAC;IACjB,IAAI,EAAE,iBAAiB,CAAC;CACzB"}
