@@ -1,0 +1,35 @@
+{% extends "newsapp/base.html" %}
+{% block title %}Newsletters — News App{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Newsletters</h1>
+
+{% if newsletters %}
+    {% for newsletter in newsletters %}
+    <div class="card">
+        <div class="meta">
+            {{ newsletter.created_at|date:"N j, Y" }} &bull;
+            By <strong>{{ newsletter.author.username }}</strong>
+            &bull; {{ newsletter.articles.count }} article{{ newsletter.articles.count|pluralize }}
+        </div>
+        <h2>{{ newsletter.title }}</h2>
+        <p style="margin-top:0.5rem;color:#444;font-size:0.95rem;">{{ newsletter.description|truncatewords:30 }}</p>
+
+        {% if newsletter.articles.exists %}
+        <div style="margin-top:0.8rem;">
+            <p style="font-family:sans-serif;font-size:0.82rem;color:#777;margin-bottom:0.4rem;">Included articles:</p>
+            <ul style="font-size:0.9rem;padding-left:1.2rem;">
+                {% for article in newsletter.articles.all|slice:":5" %}
+                <li><a href="{% url 'article-detail' article.pk %}" style="color:#1a1a2e;">{{ article.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <p style="color:#777;font-family:sans-serif;">No newsletters available yet.</p>
+    </div>
+{% endif %}
+{% endblock %}

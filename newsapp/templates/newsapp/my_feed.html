@@ -1,0 +1,77 @@
+{% extends "newsapp/base.html" %}
+{% block title %}My Feed — The News{% endblock %}
+
+{% block content %}
+<h1 class="page-title">My Feed</h1>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:1.6rem;align-items:start;">
+
+    {# ── Feed articles ── #}
+    <div>
+        {% if articles %}
+            {% for article in articles %}
+            <div class="card">
+                <div class="meta">
+                    {{ article.created_at|date:"N j, Y" }} &bull;
+                    <strong>{{ article.author.username }}</strong>
+                    {% if article.publisher %}&bull; {{ article.publisher.name }}{% endif %}
+                </div>
+                <h2 style="font-size:1.1rem;margin-bottom:0.4rem;">
+                    <a href="{% url 'article-detail' article.pk %}" style="color:#1a1a2e;text-decoration:none;">{{ article.title }}</a>
+                </h2>
+                <p style="color:#555;font-size:0.9rem;">{{ article.content|truncatewords:28 }}</p>
+                <a href="{% url 'article-detail' article.pk %}" class="btn btn-primary btn-sm" style="margin-top:0.7rem;">Read more &rarr;</a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card">
+                <p style="font-family:sans-serif;color:#777;">No articles in your feed yet — subscribe to publishers or journalists on the right.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Subscription sidebar ── #}
+    <div>
+        {# Publishers #}
+        <div class="card" style="margin-bottom:1rem;">
+            <h3 style="font-size:0.95rem;font-family:sans-serif;font-weight:700;margin-bottom:0.8rem;border-bottom:1px solid #eee;padding-bottom:0.5rem;">Publishers</h3>
+            {% for pub in all_publishers %}
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.55rem;">
+                <span style="font-family:sans-serif;font-size:0.88rem;">{{ pub.name }}</span>
+                <form method="post" action="{% url 'subscribe-publisher' pub.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    {% if pub in user.subscribed_publishers.all %}
+                    <button type="submit" class="btn btn-sm" style="background:#f0f0f0;color:#555;border:1px solid #ddd;">Unsubscribe</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-success btn-sm">Subscribe</button>
+                    {% endif %}
+                </form>
+            </div>
+            {% empty %}
+            <p style="font-family:sans-serif;font-size:0.85rem;color:#aaa;">No publishers yet.</p>
+            {% endfor %}
+        </div>
+
+        {# Journalists #}
+        <div class="card">
+            <h3 style="font-size:0.95rem;font-family:sans-serif;font-weight:700;margin-bottom:0.8rem;border-bottom:1px solid #eee;padding-bottom:0.5rem;">Journalists</h3>
+            {% for journalist in all_journalists %}
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.55rem;">
+                <span style="font-family:sans-serif;font-size:0.88rem;">@{{ journalist.username }}</span>
+                <form method="post" action="{% url 'subscribe-journalist' journalist.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    {% if journalist in user.subscribed_journalists.all %}
+                    <button type="submit" class="btn btn-sm" style="background:#f0f0f0;color:#555;border:1px solid #ddd;">Unsubscribe</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-success btn-sm">Subscribe</button>
+                    {% endif %}
+                </form>
+            </div>
+            {% empty %}
+            <p style="font-family:sans-serif;font-size:0.85rem;color:#aaa;">No journalists yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
