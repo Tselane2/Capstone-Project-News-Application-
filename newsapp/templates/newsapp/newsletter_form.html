@@ -1,0 +1,71 @@
+{% extends "newsapp/base.html" %}
+{% block title %}{% if action == 'Edit' %}Edit Newsletter{% else %}Create Newsletter{% endif %} — The News{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:2px solid #1a1a2e;">
+        <h1 style="font-size:1.6rem;">{% if action == 'Edit' %}Edit Newsletter{% else %}Create Newsletter{% endif %}</h1>
+        <a href="{% url 'newsletter-list' %}" style="font-family:sans-serif;font-size:0.85rem;color:#555;text-decoration:none;">&larr; Back to Newsletters</a>
+    </div>
+
+    <div class="card" style="padding:2rem;">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" name="title"
+                       value="{{ form.title.value|default:'' }}"
+                       class="form-control"
+                       placeholder="Give your newsletter a descriptive title"
+                       style="font-size:1.05rem;{% if form.title.errors %}border-color:#dc3545;{% endif %}"
+                       autofocus>
+                {% for err in form.title.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" rows="4" class="form-control"
+                          placeholder="A short summary shown in the newsletter listing…"
+                          style="{% if form.description.errors %}border-color:#dc3545;{% endif %}resize:vertical;">{{ form.description.value|default:'' }}</textarea>
+                {% for err in form.description.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Articles <span style="font-weight:400;color:#999;">(optional)</span></label>
+                <p style="font-family:sans-serif;font-size:0.8rem;color:#777;margin-bottom:0.6rem;">
+                    Select approved articles to include in this newsletter.
+                </p>
+                {% if form.articles.field.queryset %}
+                <div style="max-height:280px;overflow-y:auto;border:1px solid #ccc;border-radius:4px;padding:0.75rem 1rem;background:#fafafa;">
+                    {% for article in form.articles.field.queryset %}
+                    <label style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.3rem 0;font-family:sans-serif;font-size:0.88rem;cursor:pointer;">
+                        <input type="checkbox" name="articles" value="{{ article.pk }}"
+                               style="margin-top:2px;flex-shrink:0;"
+                               {% if article in form.articles.value or article.pk|stringformat:"s" in form.articles.value|default_if_none:"" %}checked{% endif %}>
+                        <span>
+                            <strong>{{ article.title }}</strong>
+                            <span style="color:#888;"> — {{ article.author.username }}</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="font-family:sans-serif;font-size:0.88rem;color:#999;padding:0.5rem 0;">
+                    No approved articles available yet.
+                </p>
+                {% endif %}
+                {% for err in form.articles.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <div style="display:flex;gap:0.8rem;align-items:center;margin-top:0.5rem;">
+                <button type="submit" class="btn btn-primary" style="padding:0.6rem 1.8rem;font-size:0.95rem;font-weight:600;">
+                    {% if action == 'Edit' %}Save changes{% else %}Create newsletter{% endif %}
+                </button>
+                <a href="{% url 'newsletter-list' %}" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "newsapp/base.html" %}
+{% block title %}Newsletters — The News{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:2px solid #1a1a2e;">
+    <h1 class="page-title" style="border:none;margin:0;padding:0;">Newsletters</h1>
+    {% if user.is_authenticated and user.role != 'reader' %}
+    <a href="{% url 'newsletter-create' %}" class="btn btn-primary">+ New Newsletter</a>
+    {% endif %}
+</div>
+
+{% if newsletters %}
+    {% for newsletter in newsletters %}
+    <div class="card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+            <div style="flex:1;min-width:0;">
+                <div class="meta">
+                    {{ newsletter.created_at|date:"N j, Y" }} &bull;
+                    By <strong>{{ newsletter.author.username }}</strong>
+                    &bull; {{ newsletter.articles.count }} article{{ newsletter.articles.count|pluralize }}
+                </div>
+                <h2>{{ newsletter.title }}</h2>
+                <p style="margin-top:0.5rem;color:#444;font-size:0.95rem;">{{ newsletter.description|truncatewords:30 }}</p>
+
+                {% if newsletter.articles.exists %}
+                <div style="margin-top:0.8rem;">
+                    <p style="font-family:sans-serif;font-size:0.82rem;color:#777;margin-bottom:0.4rem;">Included articles:</p>
+                    <ul style="font-size:0.9rem;padding-left:1.2rem;">
+                        {% for article in newsletter.articles.all|slice:":5" %}
+                        <li><a href="{% url 'article-detail' article.pk %}" style="color:#1a1a2e;">{{ article.title }}</a></li>
+                        {% endfor %}
+                        {% if newsletter.articles.count > 5 %}
+                        <li style="color:#888;font-style:italic;">…and {{ newsletter.articles.count|add:"-5" }} more</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if user.is_authenticated %}
+                {% if user.is_editor or newsletter.author == user %}
+                <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
+                    <a href="{% url 'newsletter-edit' newsletter.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                    <form method="post" action="{% url 'newsletter-delete' newsletter.pk %}"
+                          onsubmit="return confirm('Delete this newsletter?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" style="width:100%;">Delete</button>
+                    </form>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <p style="color:#777;font-family:sans-serif;">No newsletters available yet.</p>
+        {% if user.is_authenticated and user.role != 'reader' %}
+        <p style="margin-top:0.5rem;font-family:sans-serif;font-size:0.88rem;">
+            <a href="{% url 'newsletter-create' %}" style="color:#1a1a2e;font-weight:600;">Create the first newsletter &rarr;</a>
+        </p>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

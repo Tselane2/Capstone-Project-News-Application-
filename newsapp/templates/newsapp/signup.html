@@ -1,0 +1,128 @@
+{% extends "newsapp/base.html" %}
+{% block title %}Create Account — The News{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:2rem auto;">
+    <div class="card" style="padding:2rem;">
+        <h1 style="font-size:1.5rem;margin-bottom:0.25rem;">Create your account</h1>
+        <p style="font-family:sans-serif;font-size:0.88rem;color:#777;margin-bottom:1.6rem;">
+            Already have one? <a href="{% url 'login' %}" style="color:#1a1a2e;font-weight:600;">Sign in</a>
+        </p>
+
+        {% if form.non_field_errors %}
+        <div style="background:#f8d7da;color:#721c24;padding:0.7rem 1rem;border-radius:4px;font-family:sans-serif;font-size:0.88rem;margin-bottom:1.2rem;">
+            {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+                       autofocus required class="form-control" placeholder="Choose a username"
+                       style="{% if form.username.errors %}border-color:#dc3545;{% endif %}">
+                {% for err in form.username.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email <span style="color:#999;font-weight:400;">(optional)</span></label>
+                <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+                       class="form-control" placeholder="you@example.com">
+            </div>
+
+            {# ── Role picker ── #}
+            <div class="form-group">
+                <label class="form-label">I want to join as…</label>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-top:0.2rem;">
+
+                    <label style="cursor:pointer;">
+                        <input type="radio" name="role" value="reader"
+                               {% if not form.role.value or form.role.value == 'reader' %}checked{% endif %}
+                               style="display:none;" class="role-radio">
+                        <div class="role-card" data-role="reader"
+                             style="border:2px solid #cce5ff;border-radius:6px;padding:0.9rem 0.6rem;text-align:center;transition:all 0.15s;background:#f0f8ff;">
+                            <div style="font-size:1.5rem;margin-bottom:0.3rem;">&#128214;</div>
+                            <div style="font-family:sans-serif;font-weight:700;font-size:0.88rem;color:#004085;">Reader</div>
+                            <div style="font-family:sans-serif;font-size:0.75rem;color:#555;margin-top:0.3rem;line-height:1.35;">Browse articles, subscribe to publishers &amp; journalists, get a personal feed</div>
+                        </div>
+                    </label>
+
+                    <label style="cursor:pointer;">
+                        <input type="radio" name="role" value="journalist"
+                               {% if form.role.value == 'journalist' %}checked{% endif %}
+                               style="display:none;" class="role-radio">
+                        <div class="role-card" data-role="journalist"
+                             style="border:2px solid #e2d9f3;border-radius:6px;padding:0.9rem 0.6rem;text-align:center;transition:all 0.15s;background:#f8f5ff;">
+                            <div style="font-size:1.5rem;margin-bottom:0.3rem;">&#9999;&#65039;</div>
+                            <div style="font-family:sans-serif;font-weight:700;font-size:0.88rem;color:#4a235a;">Journalist</div>
+                            <div style="font-family:sans-serif;font-size:0.75rem;color:#555;margin-top:0.3rem;line-height:1.35;">Write &amp; submit articles, create newsletters, build an audience</div>
+                        </div>
+                    </label>
+
+                    <label style="cursor:pointer;">
+                        <input type="radio" name="role" value="editor"
+                               {% if form.role.value == 'editor' %}checked{% endif %}
+                               style="display:none;" class="role-radio">
+                        <div class="role-card" data-role="editor"
+                             style="border:2px solid #fde2e4;border-radius:6px;padding:0.9rem 0.6rem;text-align:center;transition:all 0.15s;background:#fff5f5;">
+                            <div style="font-size:1.5rem;margin-bottom:0.3rem;">&#9997;&#65039;</div>
+                            <div style="font-family:sans-serif;font-weight:700;font-size:0.88rem;color:#6b0f1a;">Editor</div>
+                            <div style="font-family:sans-serif;font-size:0.75rem;color:#555;margin-top:0.3rem;line-height:1.35;">Approve &amp; manage all articles, write content, oversee publications</div>
+                        </div>
+                    </label>
+
+                </div>
+                {% for err in form.role.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password1" required class="form-control"
+                       placeholder="At least 8 characters"
+                       style="{% if form.password1.errors %}border-color:#dc3545;{% endif %}">
+                {% for err in form.password1.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label class="form-label">Confirm password</label>
+                <input type="password" name="password2" required class="form-control"
+                       placeholder="Repeat your password"
+                       style="{% if form.password2.errors %}border-color:#dc3545;{% endif %}">
+                {% for err in form.password2.errors %}<p class="form-error">{{ err }}</p>{% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%;padding:0.65rem;font-size:0.95rem;font-weight:600;">
+                Create account
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const radios = document.querySelectorAll('.role-radio');
+    const cards  = document.querySelectorAll('.role-card');
+    const colors = {
+        reader:     { border: '#004085', bg: '#daeeff' },
+        journalist: { border: '#4a235a', bg: '#ede5ff' },
+        editor:     { border: '#6b0f1a', bg: '#ffe5e7' },
+    };
+    function refresh() {
+        radios.forEach(r => {
+            const card = document.querySelector(`.role-card[data-role="${r.value}"]`);
+            if (r.checked) {
+                card.style.borderColor = colors[r.value].border;
+                card.style.background  = colors[r.value].bg;
+                card.style.boxShadow   = '0 0 0 3px ' + colors[r.value].border + '33';
+            } else {
+                card.style.boxShadow = '';
+            }
+        });
+    }
+    radios.forEach(r => r.addEventListener('change', refresh));
+    refresh();
+})();
+</script>
+{% endblock %}

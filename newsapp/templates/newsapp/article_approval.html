@@ -1,0 +1,68 @@
+{% extends "newsapp/base.html" %}
+{% block title %}Article Approval — News App{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Article Approval</h1>
+
+<h2 style="font-size:1.1rem;margin-bottom:0.8rem;font-family:sans-serif;color:#555;">
+    Pending Approval ({{ pending.count }})
+</h2>
+
+{% if pending %}
+    {% for article in pending %}
+    <div class="card" style="border-left:4px solid #ffc107;">
+        <div class="meta">
+            {{ article.created_at|date:"N j, Y" }} &bull;
+            By <strong>{{ article.author.username }}</strong>
+            {% if article.publisher %}&bull; {{ article.publisher.name }}{% endif %}
+            <span class="badge badge-pending" style="margin-left:6px;">Pending</span>
+        </div>
+        <h2 style="margin-bottom:0.4rem;">{{ article.title }}</h2>
+        <p style="color:#444;font-size:0.95rem;margin-bottom:0.8rem;">{{ article.content|truncatewords:40 }}</p>
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+            <a href="{% url 'article-detail' article.pk %}" class="btn btn-primary btn-sm">Read full</a>
+            <form method="post" action="{% url 'approve-article' article.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">&#10003; Approve</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <p style="color:#777;font-family:sans-serif;">No articles pending approval.</p>
+    </div>
+{% endif %}
+
+<h2 style="font-size:1.1rem;margin:1.5rem 0 0.8rem;font-family:sans-serif;color:#555;">
+    Approved ({{ approved.count }})
+</h2>
+
+{% if approved %}
+    {% for article in approved %}
+    <div class="card" style="border-left:4px solid #28a745;">
+        <div class="meta">
+            {{ article.created_at|date:"N j, Y" }} &bull;
+            By <strong>{{ article.author.username }}</strong>
+            {% if article.publisher %}&bull; {{ article.publisher.name }}{% endif %}
+            <span class="badge badge-approved" style="margin-left:6px;">Approved</span>
+            {% if article.approved_by %}
+                <span style="font-size:0.78rem;color:#888;">by {{ article.approved_by.username }}</span>
+            {% endif %}
+        </div>
+        <h2 style="margin-bottom:0.4rem;">{{ article.title }}</h2>
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+            <a href="{% url 'article-detail' article.pk %}" class="btn btn-primary btn-sm">Read full</a>
+            <form method="post" action="{% url 'unapprove-article' article.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">&#10007; Unapprove</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <p style="color:#777;font-family:sans-serif;">No approved articles yet.</p>
+    </div>
+{% endif %}
+{% endblock %}

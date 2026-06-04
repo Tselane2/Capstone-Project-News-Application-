@@ -1,0 +1,76 @@
+{% extends "newsapp/base.html" %}
+{% block title %}{% if user.role == 'editor' %}All Articles — Editor{% else %}My Articles{% endif %} — The News{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:2px solid #1a1a2e;">
+    <h1 style="font-size:1.6rem;">
+        {% if user.role == 'editor' %}All Articles <span style="font-size:1rem;font-weight:normal;color:#777;">(editor view)</span>{% else %}My Articles{% endif %}
+    </h1>
+    {% if user.role != 'reader' %}
+    <a href="{% url 'article-create' %}" class="btn btn-warning">+ Write new article</a>
+    {% endif %}
+</div>
+
+{% if articles %}
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:0.9rem;background:#fff;border-radius:6px;overflow:hidden;border:1px solid #e0e0d8;">
+    <thead>
+        <tr style="background:#1a1a2e;color:#fff;">
+            <th style="padding:0.75rem 1rem;text-align:left;font-weight:600;">Title</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-weight:600;">Author</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-weight:600;">Publisher</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-weight:600;">Date</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-weight:600;">Status</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-weight:600;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for article in articles %}
+        <tr style="border-bottom:1px solid #f0f0e8;{% cycle '' 'background:#fafaf7;' %}">
+            <td style="padding:0.7rem 1rem;max-width:260px;">
+                <a href="{% url 'article-detail' article.pk %}" style="color:#1a1a2e;font-weight:600;text-decoration:none;">{{ article.title|truncatechars:55 }}</a>
+            </td>
+            <td style="padding:0.7rem 1rem;color:#555;">{{ article.author.username }}</td>
+            <td style="padding:0.7rem 1rem;color:#555;">{{ article.publisher.name|default:"—" }}</td>
+            <td style="padding:0.7rem 1rem;color:#888;white-space:nowrap;">{{ article.created_at|date:"N j, Y" }}</td>
+            <td style="padding:0.7rem 1rem;">
+                {% if article.approved %}
+                    <span class="badge badge-approved">Approved</span>
+                {% else %}
+                    <span class="badge badge-pending">Pending</span>
+                {% endif %}
+            </td>
+            <td style="padding:0.7rem 1rem;white-space:nowrap;">
+                <a href="{% url 'article-edit' article.pk %}" class="btn btn-sm btn-outline" style="margin-right:0.3rem;">Edit</a>
+                {% if user.role == 'editor' and not article.approved %}
+                <form method="post" action="{% url 'approve-article' article.pk %}" style="display:inline;margin-right:0.3rem;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                </form>
+                {% endif %}
+                {% if user.role == 'editor' and article.approved %}
+                <form method="post" action="{% url 'unapprove-article' article.pk %}" style="display:inline;margin-right:0.3rem;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;">Unapprove</button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'article-delete' article.pk %}" style="display:inline;"
+                      onsubmit="return confirm('Delete "{{ article.title|escapejs }}"? This cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="card">
+    <p style="color:#777;font-family:sans-serif;">
+        {% if user.role == 'editor' %}No articles in the system yet.{% else %}You haven't written any articles yet.{% endif %}
+    </p>
+    <a href="{% url 'article-create' %}" class="btn btn-primary" style="margin-top:0.8rem;">Write your first article</a>
+</div>
+{% endif %}
+{% endblock %}
